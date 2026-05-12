@@ -486,6 +486,139 @@ a:hover { color: var(--lime-soft); }
 .stack-item:nth-child(9) .stack-tag { color: var(--teal); background: rgba(0, 212, 184, 0.1); }
 
 /* =========================================================================
+   DEEP DIVE
+   ========================================================================= */
+
+.deep-dive {
+  padding: 96px 0 64px;
+}
+
+.deep-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+@media (max-width: 820px) {
+  .deep-grid { grid-template-columns: 1fr; }
+}
+
+.deep-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 36px 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text) !important;
+  transition: transform 0.22s, border-color 0.22s, background 0.22s, box-shadow 0.22s;
+  position: relative;
+  overflow: hidden;
+}
+
+.deep-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px transparent inset;
+  transition: box-shadow 0.22s;
+}
+
+.deep-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--lime);
+  transform: translateY(-4px);
+  box-shadow: 0 24px 60px -16px rgba(182, 255, 60, 0.18);
+}
+
+.deep-card:hover::after {
+  box-shadow: 0 0 0 1px rgba(182, 255, 60, 0.4) inset;
+}
+
+.deep-card:nth-child(2):hover {
+  border-color: var(--purple);
+  box-shadow: 0 24px 60px -16px rgba(124, 92, 255, 0.22);
+}
+
+.deep-card:nth-child(2):hover::after {
+  box-shadow: 0 0 0 1px rgba(124, 92, 255, 0.4) inset;
+}
+
+.deep-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin-bottom: 8px;
+}
+
+.deep-icon-code {
+  background: rgba(182, 255, 60, 0.1);
+  border: 1px solid rgba(182, 255, 60, 0.25);
+  color: var(--lime);
+}
+
+.deep-icon-inspect {
+  background: rgba(124, 92, 255, 0.1);
+  border: 1px solid rgba(124, 92, 255, 0.3);
+  color: var(--purple-soft);
+  font-size: 28px;
+}
+
+.deep-card h3 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.deep-card p {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  flex-grow: 1;
+}
+
+.deep-link {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--lime);
+  transition: gap 0.18s;
+}
+
+.deep-card:nth-child(2) .deep-link {
+  color: var(--purple-soft);
+}
+
+.deep-link .arrow {
+  font-size: 18px;
+  transition: transform 0.18s;
+}
+
+.deep-card:hover .deep-link {
+  gap: 14px;
+}
+
+.deep-card:hover .deep-link .arrow {
+  transform: translateX(4px);
+}
+
+/* =========================================================================
    FINAL CTA
    ========================================================================= */
 
