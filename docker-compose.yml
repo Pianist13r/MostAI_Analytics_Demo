@@ -88,39 +88,6 @@ services:
     command: python scheduler.py
     restart: "on-failure:3"
 
-  loader_today:
-    build:
-      context: .
-      dockerfile: Dockerfile.loader
-    container_name: metrika_loader_today
-    volumes:
-      - ./script:/app
-      - ./data:/app/data
-    working_dir: /app
-    env_file:
-      - .env
-    depends_on:
-      - db
-    environment:
-      - PYTHONUNBUFFERED=1
-      - TZ=Europe/Moscow
-    # Цикл каждые 30 минут с ночной паузой 23:58–04:00 МСК.
-    # ВАЖНО: shell — dash (POSIX), не bash. Используем GNU date %-H/%-M —
-    # они отдают число без ведущего нуля, и POSIX-арифметика принимает их как decimal.
-    command: >
-      sh -c "
-      while true; do
-        NOW=$$(( $$(date +%-H) * 60 + $$(date +%-M) ));
-        if [ $$NOW -ge 1438 ] || [ $$NOW -lt 240 ]; then
-          echo \"[today] ночная пауза 23:58-04:00 МСК (сейчас $$(date +%H:%M)), повторная проверка через 5 мин\";
-          sleep 300;
-        else
-          python metrika_loader_today.py || echo '[today] прогон упал, продолжаем';
-          sleep 1800;
-        fi;
-      done"
-    restart: unless-stopped
-
 volumes:
   postgres_data:
   redis_data:
