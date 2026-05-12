@@ -45,7 +45,7 @@ TALISMAN_CONFIG = {
     "content_security_policy": {
         "base-uri":        ["'self'"],
         "default-src":     ["'self'"],
-        "img-src":         ["'self'", "data:", "blob:"],
+        "img-src":         ["'self'", "data:", "blob:", "https://direct.yandex.ru"],
         "worker-src":      ["'self'", "blob:"],
         "connect-src":     ["'self'"],
         "object-src":      ["'none'"],
@@ -55,14 +55,14 @@ TALISMAN_CONFIG = {
         "font-src":        ["'self'", "data:"],
     },
     "content_security_policy_nonce_in": ["script-src"],
-    "force_https": False,
-    "session_cookie_secure": False,
+    "force_https": True,
+    "session_cookie_secure": True,
     "session_cookie_samesite": "Lax",
 }
 
 RATELIMIT_STORAGE_URI = "redis://redis:6379/0"
 
-PREFERRED_URL_SCHEME = "http"
+PREFERRED_URL_SCHEME = "https"
 
 SUPERSET_WEBSERVER_TIMEOUT = 300
 SQLLAB_TIMEOUT = 300
@@ -109,32 +109,32 @@ li.ant-menu-submenu:has([data-menu-id*="theme-sub-menu"]) { display: none !impor
 
 EXTRA_CATEGORICAL_COLOR_SCHEMES = [
     {
-        "id": "analytics_sources",
-        "label": "Analytics Sources",
-        "description": "Color scheme for traffic source breakdowns.",
+        "id": "mostai_sources",
+        "label": "MostAI Sources",
+        "description": "Фирменная схема для поля «Источник» — важные акцентные, остальные приглушены.",
         "isDefault": False,
         "colors": [
-            "#B6FF3C",
-            "#7C5CFF",
-            "#00D4B8",
-            "#3DD9EB",
-            "#9BE61F",
-            "#6FCC0E",
-            "#5B8DEF",
-            "#3D6FE0",
-            "#4FB3FF",
-            "#2E92E8",
-            "#1B6FBD",
-            "#FF7AA8",
-            "#FF9F43",
-            "#E8842B",
-            "#FFB454",
-            "#C792EA",
-            "#A78BFA",
-            "#88909C",
-            "#6B6F76",
-            "#7C7F88",
-            "#5F636B",
+            "#B6FF3C",  # lime — Яндекс: Директ (главный)
+            "#7C5CFF",  # purple — Реферальная программа
+            "#00D4B8",  # teal — Прямой переход
+            "#3DD9EB",  # cyan — Органический поиск
+            "#9BE61F",  # lime-2 — Яндекс: Директ, Поиск
+            "#6FCC0E",  # lime-3 — Яндекс: Директ, Сети
+            "#5B8DEF",  # blue — ВКонтакте
+            "#3D6FE0",  # blue-2 — ВК реклама
+            "#4FB3FF",  # sky — Telegram
+            "#2E92E8",  # sky-2 — Telegram main
+            "#1B6FBD",  # sky-3 — Telegram community
+            "#FF7AA8",  # pink — Социальные сети
+            "#FF9F43",  # orange — Дзен
+            "#E8842B",  # orange-2 — Дзен продвижение
+            "#FFB454",  # warm — Одноклассники
+            "#C792EA",  # lilac — Мессенджеры
+            "#A78BFA",  # lilac-2 — Рекомендательные системы
+            "#88909C",  # neutral — Внутренний переход
+            "#6B6F76",  # neutral-2 — Прочие сайты
+            "#7C7F88",  # neutral-3 — Прочая реклама
+            "#5F636B",  # neutral-4 — Прочие рекламные сети
         ],
     }
 ]
