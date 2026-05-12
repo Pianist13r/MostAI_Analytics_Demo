@@ -608,10 +608,9 @@ def _build_failed_filtered_cte() -> str:
     у того же пользователя НЕТ approved в течение 1 часа.
     Если approved прошёл — это была попытка оплаты, не учитываем.
 
-    Используется в трёх местах:
-      • _build_attribution_base_ctes  — attribution-модели visits и hits
+    Используется в двух местах:
+      • _build_attribution_base_ctes  — attribution-модели visits
       • _get_visits_calculated_sql    — last-click в visits_calculated
-      • loader_hits._get_hit_conversions_sql — last-click в hit_conversions
     """
     return f"""failed_filtered AS (
     SELECT p.payment_id
@@ -631,9 +630,9 @@ def _build_failed_filtered_cte() -> str:
 def _build_attribution_base_ctes(members_table: str, sig_cte: str) -> str:
     """Возвращает SQL-текст базовых CTE атрибуции (без префикса 'WITH').
 
-    Используется и в loader_visits (4 модели атрибуции по визитам),
-    и в loader_hits (4 модели по хитам). Параметризовано имя таблицы
-    `unified_user_id_members{_new}` и итоговый CTE с флагом is_sig.
+    Используется в loader_visits (4 модели атрибуции по визитам).
+    Параметризовано имя таблицы `unified_user_id_members{_new}` и
+    итоговый CTE с флагом is_sig.
     """
     return f"""
 {_build_failed_filtered_cte()},

@@ -51,16 +51,12 @@ def update_data_quality():
 
         # ── Дубли ─────────────────────────────────────────────────────────────
         try:
-            v_dupes = conn.execute(text(
+            v_dupes = int(conn.execute(text(
                 'SELECT COUNT(*) - COUNT(DISTINCT "ym:s:visitID") FROM metrika_visits'
-            )).scalar() or 0
-            h_dupes = conn.execute(text(
-                'SELECT COUNT(*) - COUNT(DISTINCT "ym:pv:watchID") FROM metrika_hits'
-            )).scalar() or 0
-            total  = int(v_dupes) + int(h_dupes)
-            status = 'ok' if total == 0 else 'error'
-            _add('Дубли', 'Дубли в сырых данных Метрики', status, total,
-                 'дублей нет' if total == 0 else f'visits: {int(v_dupes)}, hits: {int(h_dupes)}')
+            )).scalar() or 0)
+            status = 'ok' if v_dupes == 0 else 'error'
+            _add('Дубли', 'Дубли в сырых данных Метрики', status, v_dupes,
+                 'дублей нет' if v_dupes == 0 else f'visits: {v_dupes}')
         except Exception as e:
             _add('Дубли', 'Дубли в сырых данных Метрики', 'error', '—', str(e))
 
@@ -87,16 +83,6 @@ def update_data_quality():
                  'дублей нет' if vc_dupes == 0 else f'{vc_dupes} дублирующих visitID')
         except Exception as e:
             _add('Дубли', 'Дубли в visits_calculated', 'error', '—', str(e))
-
-        try:
-            hc_dupes = int(conn.execute(text(
-                'SELECT COUNT(*) - COUNT(DISTINCT watch_id) FROM hits_calculated'
-            )).scalar() or 0)
-            status = 'ok' if hc_dupes == 0 else 'error'
-            _add('Дубли', 'Дубли в hits_calculated', status, hc_dupes,
-                 'дублей нет' if hc_dupes == 0 else f'{hc_dupes} дублирующих watchID')
-        except Exception as e:
-            _add('Дубли', 'Дубли в hits_calculated', 'error', '—', str(e))
 
         # ── Строки ────────────────────────────────────────────────────────────
         def _row_check(check_name, *tables):
@@ -129,11 +115,9 @@ def update_data_quality():
             except Exception as e:
                 _add('Строки', check_name, 'error', '—', str(e))
 
-        _row_check('Строки: сырые данные Метрики',  'metrika_visits', 'metrika_hits')
+        _row_check('Строки: сырые данные Метрики',  'metrika_visits')
         _row_check('Строки: сырые данные MongoDB',  'mongo_payments', 'mongo_users')
         _row_check('Строки: visits_calculated',     'visits_calculated')
-        _row_check('Строки: hits_calculated',       'hits_calculated')
-        _row_check('Строки: hit_conversions',       'hit_conversions')
 
         # ── Заполненность ─────────────────────────────────────────────────────
         key_cols = [
@@ -297,186 +281,6 @@ def update_data_quality():
                      (f'; ещё {len(missing)-1} разрыва' if len(missing) > 1 else ''))
         except Exception as e:
             _add('Актуальность', 'Пропущенные дни', 'error', '—', str(e))
-
-        # ── Покрытие визитов хитами (orphan-визиты Метрики) ───────────────────
-        # Аналог сверки расходов Директа: сколько визитов из visits_calculated
-        # имеют хотя бы один хит, и какая доля платежей/регистраций
-        # «теряется» на orphan-визитах. На свежих данных orphan-визитов почти
-        # нет — это известная проблема первых месяцев счётчика (Метрика
-        # не возвращала хиты для части визитов). Свежие визиты без хитов —
-        # сигнал к расследованию.
-        # Реализация через LEFT JOIN агрегата visit_id'ов (одно сканирование
-        # hits_calculated вместо EXISTS-подзапроса на каждую строку).
-        try:
-            stats = conn.execute(text("""
-                WITH hit_visits AS (
-                    SELECT DISTINCT visit_id FROM hits_calculated
-                ),
-                vc_marked AS (
-                    SELECT
-                      vc."ym:s:visitID"   AS visit_id,
-                      vc."ym:s:dateTime"  AS visit_dt,
-                      vc.payments_approved_sum,
-                      vc.payments_approved_count,
-                      vc.registrations_count,
-                      (hv.visit_id IS NULL) AS no_hits
-                    FROM visits_calculated vc
-                    LEFT JOIN hit_visits hv ON hv.visit_id = vc."ym:s:visitID"
-                )
-                SELECT
-                  COUNT(*)                                      AS visits_total,
-                  COUNT(*) FILTER (WHERE no_hits)                AS visits_no_hits,
-                  COUNT(*) FILTER (WHERE visit_dt::date >=
-                      (NOW() AT TIME ZONE 'Europe/Moscow')::date - INTERVAL '14 days'
-                  )                                              AS visits_total_recent14d,
-                  COUNT(*) FILTER (WHERE no_hits AND visit_dt::date >=
-                      (NOW() AT TIME ZONE 'Europe/Moscow')::date - INTERVAL '14 days'
-                  )                                              AS visits_no_hits_recent14d,
-                  COALESCE(SUM(payments_approved_sum)   FILTER (WHERE no_hits), 0) AS approved_sum_orphan,
-                  COALESCE(SUM(payments_approved_count) FILTER (WHERE no_hits), 0) AS approved_cnt_orphan,
-                  COALESCE(SUM(registrations_count)     FILTER (WHERE no_hits), 0) AS regs_orphan,
-                  COALESCE(SUM(payments_approved_sum), 0)        AS approved_sum_total,
-                  COALESCE(SUM(payments_approved_count), 0)      AS approved_cnt_total,
-                  COALESCE(SUM(registrations_count), 0)          AS regs_total
-                FROM vc_marked
-            """)).fetchone()
-            visits_total           = int(stats[0] or 0)
-            no_hits                 = int(stats[1] or 0)
-            visits_total_recent    = int(stats[2] or 0)
-            no_hits_recent         = int(stats[3] or 0)
-            approved_sum_orph      = float(stats[4] or 0)
-            approved_cnt_orph      = int(stats[5] or 0)
-            regs_orph              = int(stats[6] or 0)
-            approved_sum_total     = float(stats[7] or 0)
-            approved_cnt_total     = int(stats[8] or 0)
-            regs_total             = int(stats[9] or 0)
-
-            cov_visits   = (visits_total - no_hits) / visits_total if visits_total else 0
-            cov_revenue  = (approved_sum_total - approved_sum_orph) / approved_sum_total if approved_sum_total else 1
-            cov_payments = (approved_cnt_total - approved_cnt_orph) / approved_cnt_total if approved_cnt_total else 1
-            cov_regs     = (regs_total - regs_orph) / regs_total if regs_total else 1
-            # Доля orphan-визитов среди СВЕЖИХ (последние 14 дней) — главный индикатор
-            # деградации Logs API. Базовый шум ~1–2% (часть визитов в принципе не имеет
-            # хитов: event-only сессии, заходы в чат-бот без page-view). Резкий рост —
-            # сигнал, что трекер на сайте перестал отдавать хиты.
-            recent_orphan_pct = no_hits_recent / visits_total_recent if visits_total_recent else 0
-
-            # Пороги:
-            #   • СВЕЖИЕ (recent14d): любой orphan = warning, > 5% = error
-            #     В свежих данных хитов вообще не должно «теряться» — если
-            #     теряются, значит трекер на сайте перестал отдавать хиты
-            #     или Logs API даёт сбои. Любой свежий orphan — повод посмотреть.
-            #   • ОБЩАЯ ВЫРУЧКА: > 1% дельта = warning, > 5% = error
-            #     На исторической базе ~1% теряется на orphan-визитах сентября-октября
-            #     2025 (период раннего внедрения трекера). Это нельзя исправить
-            #     задним числом, поэтому warning при 1%, не error.
-            status = 'ok'
-            reasons = []
-            if recent_orphan_pct > 0.05:
-                status = 'error'
-                reasons.append(f'свежие 14 дн orphan {recent_orphan_pct:.1%} > 5%')
-            elif no_hits_recent > 0:
-                status = 'warning'
-                reasons.append(f'свежие 14 дн orphan: {no_hits_recent} визитов')
-            if (1 - cov_revenue) > 0.05:
-                status = 'error'
-                reasons.append(f'дельта выручки {(1 - cov_revenue):.1%} > 5%')
-            elif (1 - cov_revenue) > 0.01 and status != 'error':
-                status = 'warning'
-                reasons.append(f'дельта выручки {(1 - cov_revenue):.1%} > 1%')
-
-            details = (f"Покрытие: визиты {cov_visits:.1%}, выручка {cov_revenue:.1%}, "
-                       f"оплаты {cov_payments:.1%}, регистрации {cov_regs:.1%}. "
-                       f"Orphan всего: {no_hits:,} визитов / {approved_sum_orph:,.0f}₽ / "
-                       f"{approved_cnt_orph} оплат / {regs_orph} рег. "
-                       f"Свежие 14 дн: {no_hits_recent} orphan из {visits_total_recent:,} "
-                       f"({recent_orphan_pct:.1%}).")
-            if reasons:
-                details += " " + "; ".join(reasons) + "."
-
-            _add('Хиты', 'Покрытие визитов хитами Метрики', status,
-                 f'{cov_visits:.1%}', details)
-        except Exception as e:
-            _add('Хиты', 'Покрытие визитов хитами Метрики', 'error', '—', str(e))
-
-        # ── Регрессия атрибуции hits ↔ visits (last-click) ────────────────────
-        # SUM(hit_conversions WHERE approved) должен == SUM(visits_calculated.approved_sum)
-        # — потому что обе модели формально last-click, единица атрибуции (хит vs визит)
-        # не меняет общую сумму конверсий пользователя. Расхождение > 0.5% → проблема:
-        # либо потеряны хиты у части пользователей, либо JOIN не докрыл часть платежей.
-        try:
-            sum_hcv = float(conn.execute(text(
-                "SELECT COALESCE(SUM(event_amount), 0) FROM hit_conversions "
-                "WHERE event_type = 'payment_approved'"
-            )).scalar() or 0)
-            sum_vc  = float(conn.execute(text(
-                "SELECT COALESCE(SUM(payments_approved_sum), 0) FROM visits_calculated"
-            )).scalar() or 0)
-            regs_hcv = int(conn.execute(text(
-                "SELECT COUNT(*) FROM hit_conversions WHERE event_type = 'registration'"
-            )).scalar() or 0)
-            regs_vc = int(conn.execute(text(
-                "SELECT COALESCE(SUM(registrations_count), 0) FROM visits_calculated"
-            )).scalar() or 0)
-
-            if sum_vc > 0:
-                diff_pct = abs(sum_hcv - sum_vc) / sum_vc
-                status = 'ok' if diff_pct < 0.005 else 'warning' if diff_pct < 0.05 else 'error'
-                _add('Атрибуция', 'Регрессия approved-сумм (hits ↔ visits)', status,
-                     f'{diff_pct:.2%}',
-                     f'hit_conversions: {sum_hcv:,.2f}₽ | visits_calculated: {sum_vc:,.2f}₽ | '
-                     f'дельта {sum_hcv - sum_vc:+,.2f}₽')
-            else:
-                _add('Атрибуция', 'Регрессия approved-сумм (hits ↔ visits)', 'warning',
-                     '—', 'visits_calculated.payments_approved_sum = 0')
-
-            if regs_vc > 0:
-                diff_pct_r = abs(regs_hcv - regs_vc) / regs_vc
-                status_r = 'ok' if diff_pct_r < 0.005 else 'warning' if diff_pct_r < 0.05 else 'error'
-                _add('Атрибуция', 'Регрессия регистраций (hits ↔ visits)', status_r,
-                     f'{diff_pct_r:.2%}',
-                     f'hit_conversions: {regs_hcv:,} | visits_calculated: {regs_vc:,} | '
-                     f'дельта {regs_hcv - regs_vc:+,}')
-            else:
-                _add('Атрибуция', 'Регрессия регистраций (hits ↔ visits)', 'warning',
-                     '—', 'visits_calculated.registrations_count = 0')
-        except Exception as e:
-            _add('Атрибуция', 'Регрессия hits ↔ visits', 'error', '—', str(e))
-
-        # ── Связность hits_calculated ─────────────────────────────────────────
-        try:
-            orphan = int(conn.execute(text(
-                "SELECT COUNT(*) FROM hits_calculated "
-                "WHERE visit_id IS NULL OR unified_user_id IS NULL"
-            )).scalar() or 0)
-            status = 'ok' if orphan == 0 else 'warning'
-            _add('Заполненность', 'Hits-orphans (без visit_id/uid)', status, orphan,
-                 'все хиты привязаны к визиту' if orphan == 0
-                 else f'{orphan:,} хитов без родительского визита/пользователя')
-        except Exception as e:
-            _add('Заполненность', 'Hits-orphans (без visit_id/uid)', 'error', '—', str(e))
-
-        # ── Свежесть hits_calculated ──────────────────────────────────────────
-        try:
-            last_dt = conn.execute(text(
-                'SELECT MAX(hit_dt) FROM hits_calculated'
-            )).scalar()
-            if last_dt:
-                if isinstance(last_dt, datetime):
-                    last = last_dt
-                else:
-                    last = datetime.fromisoformat(str(last_dt)[:19])
-                now_msk  = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=3)
-                age_days = (now_msk - last).total_seconds() / 86400
-                status   = 'ok' if age_days <= 1.5 else 'warning' if age_days <= 3.0 else 'error'
-                _add('Актуальность', 'Свежесть hits_calculated', status,
-                     last.strftime('%Y-%m-%d'),
-                     f'Последний хит {age_days:.1f} дн. назад')
-            else:
-                _add('Актуальность', 'Свежесть hits_calculated', 'error',
-                     '—', 'hits_calculated пуст')
-        except Exception as e:
-            _add('Актуальность', 'Свежесть hits_calculated', 'error', '—', str(e))
 
         # ── Сверка расходов Директа ───────────────────────────────────────────
         try:

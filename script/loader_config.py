@@ -34,8 +34,8 @@ log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Cutoff «снизу»: визиты, платежи, регистрации раньше этой даты не попадают
-# в visits_calculated/hits_calculated. Исторические данные у Метрики/MongoDB
-# есть и до неё, но в отчётности и атрибуции не используются.
+# в visits_calculated. Исторические данные у Метрики/MongoDB есть и до неё,
+# но в отчётности и атрибуции не используются.
 # Меняется единообразно во всех модулях ETL — ровно одна точка правды.
 # ---------------------------------------------------------------------------
 REPORT_START_DATE = '2025-09-01'
@@ -219,18 +219,4 @@ VISIT_FIELDS = ",".join([
     "ym:s:parsedParamsKey8",
     "ym:s:parsedParamsKey9",
     "ym:s:parsedParamsKey10",
-])
-
-HIT_FIELDS = ",".join([
-    "ym:pv:watchID",
-    "ym:pv:visitID",            # связь с visits_calculated
-    "ym:pv:counterUserIDHash",  # резерв, если visitID пропустит API
-    "ym:pv:clientID",
-    "ym:pv:dateTime",
-    "ym:pv:URL",
-    "ym:pv:title",
-    "ym:pv:referer",            # источник перехода / внутренний referer
-    "ym:pv:goalsID",            # массив достигнутых целей в этом просмотре
-    "ym:pv:isPageView",         # 1 = настоящий просмотр страницы, 0 = event-хит
-    "ym:pv:notBounce",          # 1 = засчитанный непокинутый просмотр
 ])
