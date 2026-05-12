@@ -9,6 +9,42 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Yandex.Metrika counter -->
+  <script>
+    // Активация dev-режима через ?dev=1 — сохраняет cookie на год
+    (function(){
+      try {
+        var p = new URLSearchParams(location.search);
+        if (p.get('dev') === '1') {
+          document.cookie = 'mostai_internal=1; path=/; domain=.github.io; max-age=' + (365*24*3600) + '; SameSite=Lax';
+          document.cookie = 'mostai_internal=1; path=/; max-age=' + (365*24*3600) + '; SameSite=Lax';
+        }
+      } catch (_) {}
+    })();
+    var __isInternal = document.cookie.indexOf('mostai_internal=1') !== -1;
+  </script>
+  <script>
+    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+    m[i].l=1*new Date();
+    for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+    k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+    (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+    ym(109158428, "init", {
+      clickmap: true,
+      trackLinks: true,
+      accurateTrackBounce: true,
+      webvisor: true,
+      trackHash: true
+    });
+
+    if (__isInternal) {
+      ym(109158428, 'params', { is_internal: true });
+    }
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/109158428" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- /Yandex.Metrika counter -->
 </head>
 <body>
 
@@ -21,12 +57,12 @@
       <p class="hero-sub">Apache Superset поверх ETL-конвейера на Python. Пять моделей маркетинговой атрибуции, креативы с историей, кросс-фильтрация по 15 разрезам, защита от несовместимых срезов. Данные обезличены — стенд открыт без логина.</p>
 
       <div class="cta-row">
-        <a class="cta-primary" href="https://mostai-demo.duckdns.org/superset/dashboard/1/" target="_blank" rel="noopener">
+        <a class="cta-primary" href="https://mostai-demo.duckdns.org/superset/dashboard/1/" target="_blank" rel="noopener" onclick="if(window.ym)ym(109158428,'reachGoal','cta_dashboard_click')">
           <span class="cta-icon">▶</span>
           <span class="cta-label">Открыть живой дашборд</span>
           <span class="cta-hint">Без логина · стенд работает прямо сейчас</span>
         </a>
-        <a class="cta-secondary" href="https://github.com/Pianist13r/MostAI_Analytics_Demo" target="_blank" rel="noopener">
+        <a class="cta-secondary" href="https://github.com/Pianist13r/MostAI_Analytics_Demo" target="_blank" rel="noopener" onclick="if(window.ym)ym(109158428,'reachGoal','cta_github_click')">
           <span class="gh-icon">⌘</span> Код на GitHub
         </a>
       </div>
@@ -170,14 +206,14 @@
 
       <div class="deep-grid">
 
-        <a class="deep-card" href="https://github.com/Pianist13r/MostAI_Analytics_Demo" target="_blank" rel="noopener">
+        <a class="deep-card" href="https://github.com/Pianist13r/MostAI_Analytics_Demo" target="_blank" rel="noopener" onclick="if(window.ym)ym(109158428,'reachGoal','deep_github_click')">
           <div class="deep-icon deep-icon-code">&lt;/&gt;</div>
           <h3>Технический код</h3>
           <p>Все ETL-модули, SQL-запросы атрибуции, инфраструктура nginx + HTTPS + Let's Encrypt, конфиг Superset. С комментариями и историей коммитов.</p>
           <div class="deep-link">Открыть репозиторий на GitHub <span class="arrow">→</span></div>
         </a>
 
-        <a class="deep-card" href="https://mostai-demo.duckdns.org/superset/dashboard/1/" target="_blank" rel="noopener">
+        <a class="deep-card" href="https://mostai-demo.duckdns.org/superset/dashboard/1/" target="_blank" rel="noopener" onclick="if(window.ym)ym(109158428,'reachGoal','deep_dashboard_click')">
           <div class="deep-icon deep-icon-inspect">⌕</div>
           <h3>Внутренности дашборда</h3>
           <p>Прямо из живого стенда. Кликните на любой чарт — увидите его SQL и настройки. В боковом меню «Датасеты» — 23 виртуальных датасета с полями, метриками и Jinja-фильтрами. В «Диаграммы» — каждый чарт с конфигурацией. Доступ только на чтение, ничего не сломать.</p>
@@ -193,7 +229,7 @@
     <div class="container">
       <h2>Лучший способ оценить — открыть и попробовать</h2>
       <p class="final-sub">Дашборд работает в реальном времени, данные обезличены. Без регистрации, без логина, без согласия на cookies. Просто открывается и можно щёлкать.</p>
-      <a class="cta-primary cta-final-button" href="https://mostai-demo.duckdns.org/superset/dashboard/1/" target="_blank" rel="noopener">
+      <a class="cta-primary cta-final-button" href="https://mostai-demo.duckdns.org/superset/dashboard/1/" target="_blank" rel="noopener" onclick="if(window.ym)ym(109158428,'reachGoal','cta_final_dashboard_click')">
         <span class="cta-icon">▶</span>
         <span class="cta-label">Открыть живой дашборд</span>
         <span class="cta-hint">mostai-demo.duckdns.org</span>
