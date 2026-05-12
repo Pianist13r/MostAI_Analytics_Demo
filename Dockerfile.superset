@@ -1,0 +1,9 @@
+FROM apache/superset@sha256:7bdc8845cd0a303d3a96963b07d05419979800ea919736de553804360df121b8
+USER root
+RUN uv pip install --python /app/.venv/bin/python --no-cache "psycopg2-binary>=2.9,<3"
+COPY docker/translations/ru/LC_MESSAGES/messages.po /app/superset/translations/ru/LC_MESSAGES/messages.po
+RUN /app/.venv/bin/pybabel compile -f \
+    -i /app/superset/translations/ru/LC_MESSAGES/messages.po \
+    -o /app/superset/translations/ru/LC_MESSAGES/messages.mo \
+    || true
+USER superset

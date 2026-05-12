@@ -1,0 +1,26 @@
+# Секреты
+.env
+
+# Данные и логи
+data/
+*.log
+*.db
+*.csv
+
+# Superset runtime
+superset_home/
+superset_export/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

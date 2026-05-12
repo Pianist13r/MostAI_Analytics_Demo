@@ -1,0 +1,112 @@
+services:
+
+  db:
+    image: postgres:15
+    container_name: superset_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: superset_redis
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  superset:
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
+    container_name: superset_app
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./data:/home/superset/db_folder
+      - ./superset_home:/app/superset_home
+      - ./superset_config.py:/app/pythonpath/superset_config.py
+    env_file:
+      - .env
+    environment:
+      - SUPERSET_SECRET_KEY=${SUPERSET_SECRET_KEY}
+      - PREVENT_UNSAFE_DB_CONNECTIONS=False
+      - SUPERSET_HOME=/app/superset_home
+      - PYTHONPATH=/app/pythonpath
+    depends_on:
+      - db
+      - redis
+    entrypoint: >
+      sh -c "
+      superset db upgrade &&
+      superset init &&
+      gunicorn --bind 0.0.0.0:8088 --workers 4 --worker-class gthread --threads 8 --timeout 120 --limit-request-line 0 --limit-request-field_size 0 'superset.app:create_app()'"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  loader:
+    build:
+      context: .
+      dockerfile: Dockerfile.loader
+    container_name: metrika_loader
+    volumes:
+      - ./script:/app
+      - ./data:/app/data
+    working_dir: /app
+    env_file:
+      - .env
+    depends_on:
+      - db
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=Europe/Moscow
+      - SUPERSET_INTERNAL_URL=http://superset:8088
+      - SUPERSET_ADMIN_USER=${SUPERSET_ADMIN_USER}
+      - SUPERSET_ADMIN_PASSWORD=${SUPERSET_ADMIN_PASSWORD}
+    command: python scheduler.py
+    restart: "on-failure:3"
+
+  loader_today:
+    build:
+      context: .
+      dockerfile: Dockerfile.loader
+    container_name: metrika_loader_today
+    volumes:
+      - ./script:/app
+      - ./data:/app/data
+    working_dir: /app
+    env_file:
+      - .env
+    depends_on:
+      - db
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=Europe/Moscow
+    # Цикл каждые 30 минут с ночной паузой 23:58–04:00 МСК.
+    # ВАЖНО: shell — dash (POSIX), не bash. Используем GNU date %-H/%-M —
+    # они отдают число без ведущего нуля, и POSIX-арифметика принимает их как decimal.
+    command: >
+      sh -c "
+      while true; do
+        NOW=$$(( $$(date +%-H) * 60 + $$(date +%-M) ));
+        if [ $$NOW -ge 1438 ] || [ $$NOW -lt 240 ]; then
+          echo \"[today] ночная пауза 23:58-04:00 МСК (сейчас $$(date +%H:%M)), повторная проверка через 5 мин\";
+          sleep 300;
+        else
+          python metrika_loader_today.py || echo '[today] прогон упал, продолжаем';
+          sleep 1800;
+        fi;
+      done"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
