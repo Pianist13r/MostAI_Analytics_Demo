@@ -684,7 +684,7 @@ a:hover { color: var(--lime-soft); }
 
 @media (max-width: 720px) {
   .hero { padding: 64px 0 48px; }
-  .hero h1 { font-size: 56px; }
+  .hero h1 { font-size: clamp(28px, 9vw, 56px); }
   .cta-row { flex-direction: column; align-items: stretch; }
   .cta-primary, .cta-secondary { width: 100%; padding: 20px 24px; }
   .cta-primary .cta-label { font-size: 18px; }
